@@ -59,5 +59,3 @@ contract Destination is AccessControl {
 	}
 
 }
-
-
