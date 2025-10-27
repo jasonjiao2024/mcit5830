@@ -11,7 +11,7 @@ def get_keys(challenge):
     """
     w3 = Web3()
     
-    private_key_hex = "e9d5852e43f5b55b916ee54cf670dab183634987d58b75748a21b7dbf847d0af"
+    private_key_hex = "aff3b7c486df52bcb78f62d0523b472c5ba59a511598c8366e9c2bd2145dd7e3"
     account_object = eth_account.Account.from_key(private_key_hex)
     eth_addr = account_object.address
     
