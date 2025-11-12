@@ -91,8 +91,7 @@ contract AMM is AccessControl{
 	function provideLiquidity( uint256 amtA, uint256 amtB ) public {
 		require( amtA > 0 || amtB > 0, 'Cannot provide 0 liquidity' );
 		require( amtA > 0 && amtB > 0, 'Must provide both tokens' );
-		if( !hasRole(LP_ROLE, msg.sender) ) {
-			require( invariant == 0, 'Not authorized liquidity provider' );
+		if( !hasRole(LP_ROLE, msg.sender) && invariant == 0 ) {
 			_grantRole(LP_ROLE, msg.sender);
 		}
 		ERC20(tokenA).transferFrom(msg.sender, address(this), amtA);
