@@ -142,18 +142,12 @@ def scan_blocks(chain, contract_info="contract_info.json"):
                 signed_txn = dest_w3.eth.account.sign_transaction(transaction, account.key)
                 tx_hash = dest_w3.eth.send_raw_transaction(signed_txn.raw_transaction)
                 
-                # Wait for transaction receipt (75% version approach - one by one)
-                receipt = dest_w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
-                if receipt['status'] == 1:
-                    print(f"Wrapped {amount} tokens to {recipient} on destination chain. Tx: {tx_hash.hex()}")
-                else:
-                    print(f"Failed to wrap {amount} tokens. Tx: {tx_hash.hex()}")
+                print(f"Sent wrap transaction: {tx_hash.hex()}")
     
     elif chain == 'destination':
-        # Look for Unwrap events on destination chain
-        # Scan MORE blocks to catch events that just happened
+
         end_block = w3.eth.get_block_number()
-        start_block = max(1, end_block - 15)  # Increased from 5 to 15 blocks
+        start_block = max(1, end_block - 15)  
         
         print(f"Scanning destination blocks {start_block} - {end_block}")
         
