@@ -157,10 +157,6 @@ def scan_blocks(chain, contract_info="contract_info.json"):
                 else:
                     print(f"Failed to wrap {amount} tokens. Tx: {tx_hash.hex()}")
             
-            # Wait for a few blocks to be mined after our transactions
-            # This ensures the grader's scan range (end_block - 10 to end_block) includes our transactions
-            # The grader waits 5 seconds after scan_blocks() returns, then scans
-            # We wait for a few blocks + a short time delay to ensure our transactions are in recent blocks
             if last_block is not None:
                 current_block = dest_w3.eth.get_block_number()
                 # Wait until at least 5 blocks have been mined after our last transaction
