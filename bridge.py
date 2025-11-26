@@ -96,26 +96,14 @@ def scan_blocks(chain, contract_info="contract_info.json"):
         print(f"Scanning source blocks {start_block} - {end_block}")
         
         # Look for Deposit events on source chain
-        arg_filter = {}
         all_events = []
         try:
-            if end_block - start_block < 30:
-                event_filter = contract.events.Deposit.create_filter(
-                    fromBlock=start_block, 
-                    toBlock=end_block, 
-                    argument_filters=arg_filter
-                )
-                events = event_filter.get_all_entries()
-                all_events.extend(events)
-            else:
-                for block_num in range(start_block, end_block + 1):
-                    event_filter = contract.events.Deposit.create_filter(
-                        fromBlock=block_num, 
-                        toBlock=block_num, 
-                        argument_filters=arg_filter
-                    )
-                    events = event_filter.get_all_entries()
-                    all_events.extend(events)
+            event_filter = contract.events.Deposit.create_filter(
+                from_block=start_block, 
+                to_block=end_block
+            )
+            events = event_filter.get_all_entries()
+            all_events.extend(events)
         except Exception as e:
             print(f"Error scanning for Deposit events: {e}")
             all_events = []
@@ -169,26 +157,14 @@ def scan_blocks(chain, contract_info="contract_info.json"):
         
         print(f"Scanning destination blocks {start_block} - {end_block}")
         
-        arg_filter = {}
         all_events = []
         try:
-            if end_block - start_block < 30:
-                event_filter = contract.events.Unwrap.create_filter(
-                    fromBlock=start_block, 
-                    toBlock=end_block, 
-                    argument_filters=arg_filter
-                )
-                events = event_filter.get_all_entries()
-                all_events.extend(events)
-            else:
-                for block_num in range(start_block, end_block + 1):
-                    event_filter = contract.events.Unwrap.create_filter(
-                        fromBlock=block_num, 
-                        toBlock=block_num, 
-                        argument_filters=arg_filter
-                    )
-                    events = event_filter.get_all_entries()
-                    all_events.extend(events)
+            event_filter = contract.events.Unwrap.create_filter(
+                from_block=start_block, 
+                to_block=end_block
+            )
+            events = event_filter.get_all_entries()
+            all_events.extend(events)
         except Exception as e:
             print(f"Error scanning for Unwrap events: {e}")
             all_events = []
