@@ -151,9 +151,9 @@ def scan_blocks(chain, contract_info="contract_info.json"):
     
     elif chain == 'destination':
         # Look for Unwrap events on destination chain
-        # Get fresh block number from destination chain right before scanning
+        # Scan MORE blocks to catch events that just happened
         end_block = w3.eth.get_block_number()
-        start_block = max(1, end_block - 5)
+        start_block = max(1, end_block - 15)  # Increased from 5 to 15 blocks
         
         print(f"Scanning destination blocks {start_block} - {end_block}")
         
