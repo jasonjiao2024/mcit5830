@@ -29,6 +29,7 @@ def get_contract_info(chain, contract_info):
         This function is used by the autograder and will likely be useful to you
     """
     try:
+        # Handle both Path objects and strings (open() handles Path in Python 3.6+)
         with open(contract_info, 'r')  as f:
             contracts = json.load(f)
     except Exception as e:
