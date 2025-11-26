@@ -106,7 +106,7 @@ def scan_blocks(chain, contract_info="contract_info.json"):
                 recipient = evt.args['recipient']
                 amount = evt.args['amount']
                 
-                nonce = dest_w3.eth.get_transaction_count(account.address)
+                nonce = dest_w3.eth.get_transaction_count(account.address, 'pending')
                 transaction = dest_contract.functions.wrap(token, recipient, amount).build_transaction({
                     'from': account.address,
                     'nonce': nonce,
@@ -116,8 +116,11 @@ def scan_blocks(chain, contract_info="contract_info.json"):
                 
                 signed_txn = dest_w3.eth.account.sign_transaction(transaction, account.key)
                 tx_hash = dest_w3.eth.send_raw_transaction(signed_txn.raw_transaction)
-                dest_w3.eth.wait_for_transaction_receipt(tx_hash)
-                print(f"Wrapped {amount} tokens to {recipient} on destination chain. Tx: {tx_hash.hex()}")
+                receipt = dest_w3.eth.wait_for_transaction_receipt(tx_hash)
+                if receipt.status == 1:
+                    print(f"Wrapped {amount} tokens to {recipient} on destination chain. Tx: {tx_hash.hex()}")
+                else:
+                    print(f"Failed to wrap {amount} tokens. Tx: {tx_hash.hex()}")
     
     elif chain == 'destination':
         UNWRAP_ABI = json.loads('[{"anonymous": false, "inputs": [{"indexed": true, "internalType": "address", "name": "underlying_token", "type": "address"}, {"indexed": true, "internalType": "address", "name": "wrapped_token", "type": "address"}, {"indexed": false, "internalType": "address", "name": "frm", "type": "address"}, {"indexed": true, "internalType": "address", "name": "to", "type": "address"}, {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}], "name": "Unwrap", "type": "event"}]')
@@ -141,7 +144,7 @@ def scan_blocks(chain, contract_info="contract_info.json"):
                 recipient = evt.args['to']
                 amount = evt.args['amount']
                 
-                nonce = source_w3.eth.get_transaction_count(account.address)
+                nonce = source_w3.eth.get_transaction_count(account.address, 'pending')
                 transaction = source_contract.functions.withdraw(token, recipient, amount).build_transaction({
                     'from': account.address,
                     'nonce': nonce,
@@ -151,5 +154,8 @@ def scan_blocks(chain, contract_info="contract_info.json"):
                 
                 signed_txn = source_w3.eth.account.sign_transaction(transaction, account.key)
                 tx_hash = source_w3.eth.send_raw_transaction(signed_txn.raw_transaction)
-                source_w3.eth.wait_for_transaction_receipt(tx_hash)
-                print(f"Withdrew {amount} tokens to {recipient} on source chain. Tx: {tx_hash.hex()}")
+                receipt = source_w3.eth.wait_for_transaction_receipt(tx_hash)
+                if receipt.status == 1:
+                    print(f"Withdrew {amount} tokens to {recipient} on source chain. Tx: {tx_hash.hex()}")
+                else:
+                    print(f"Failed to withdraw {amount} tokens. Tx: {tx_hash.hex()}")
