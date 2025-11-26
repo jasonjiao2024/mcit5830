@@ -4,6 +4,8 @@ from web3.middleware import ExtraDataToPOAMiddleware #Necessary for POA chains
 from datetime import datetime
 import json
 import eth_account
+import os
+from pathlib import Path
 
 
 def connect_to(chain):
@@ -47,7 +49,26 @@ def scan_blocks(chain, contract_info="contract_info.json"):
         print( f"Invalid chain: {chain}" )
         return 0
     
-    with open("secret_key.txt", "r") as f:
+    secret_key_file = None
+    possible_paths = [
+        "secret_key.txt",
+        "sk.txt",
+        os.path.join(os.path.dirname(__file__), "secret_key.txt"),
+        os.path.join(os.path.dirname(__file__), "sk.txt"),
+        os.path.join(os.getcwd(), "secret_key.txt"),
+        os.path.join(os.getcwd(), "sk.txt"),
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            secret_key_file = path
+            break
+    
+    if secret_key_file is None:
+        print( f"Error: Could not find secret_key.txt or sk.txt in any of the expected locations" )
+        return 0
+    
+    with open(secret_key_file, "r") as f:
         private_key = f.read().strip()
     account = eth_account.Account.from_key(private_key)
     
