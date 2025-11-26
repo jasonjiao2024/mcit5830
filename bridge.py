@@ -89,6 +89,7 @@ def scan_blocks(chain, contract_info="contract_info.json"):
     contract = w3.eth.contract(address=contract_address, abi=contract_abi)
     
     # Scan the last 5 blocks
+    # Get fresh block number right before scanning to ensure we catch recent events
     end_block = w3.eth.get_block_number()
     start_block = max(1, end_block - 5)
     
