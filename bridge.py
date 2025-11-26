@@ -82,14 +82,18 @@ def scan_blocks(chain, contract_info="contract_info.json"):
     contract = w3.eth.contract(address=contract_address, abi=contract_abi)
     
     end_block = w3.eth.get_block_number()
-    start_block = end_block - 5
+    start_block = max(1, end_block - 5)
     
     if chain == 'source':
         DEPOSIT_ABI = json.loads('[{"anonymous": false, "inputs": [{"indexed": true, "internalType": "address", "name": "token", "type": "address"}, {"indexed": true, "internalType": "address", "name": "recipient", "type": "address"}, {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}], "name": "Deposit", "type": "event"}]')
         event_contract = w3.eth.contract(address=contract_address, abi=DEPOSIT_ABI)
         
-        event_filter = event_contract.events.Deposit.create_filter(from_block=start_block, to_block=end_block)
-        events = event_filter.get_all_entries()
+        arg_filter = {}
+        try:
+            event_filter = event_contract.events.Deposit.create_filter(from_block=start_block, to_block=end_block, argument_filters=arg_filter)
+            events = event_filter.get_all_entries()
+        except Exception as e:
+            events = []
         
         if len(events) > 0:
             dest_contracts_data = get_contract_info("destination", contract_info)
@@ -126,8 +130,12 @@ def scan_blocks(chain, contract_info="contract_info.json"):
         UNWRAP_ABI = json.loads('[{"anonymous": false, "inputs": [{"indexed": true, "internalType": "address", "name": "underlying_token", "type": "address"}, {"indexed": true, "internalType": "address", "name": "wrapped_token", "type": "address"}, {"indexed": false, "internalType": "address", "name": "frm", "type": "address"}, {"indexed": true, "internalType": "address", "name": "to", "type": "address"}, {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}], "name": "Unwrap", "type": "event"}]')
         event_contract = w3.eth.contract(address=contract_address, abi=UNWRAP_ABI)
         
-        event_filter = event_contract.events.Unwrap.create_filter(from_block=start_block, to_block=end_block)
-        events = event_filter.get_all_entries()
+        arg_filter = {}
+        try:
+            event_filter = event_contract.events.Unwrap.create_filter(from_block=start_block, to_block=end_block, argument_filters=arg_filter)
+            events = event_filter.get_all_entries()
+        except Exception as e:
+            events = []
         
         if len(events) > 0:
             source_contracts_data = get_contract_info("source", contract_info)
