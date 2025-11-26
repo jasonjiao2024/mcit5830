@@ -49,12 +49,10 @@ def scan_blocks(chain, contract_info="contract_info.json"):
         When Unwrap events are found on the destination chain, call the 'withdraw' function on the source chain
     """
 
-    # This is different from Bridge IV where chain was "avax" or "bsc"
     if chain not in ['source','destination']:
         print( f"Invalid chain: {chain}" )
         return 0
     
-    # Load the warden's private key from secret_key.txt
     secret_key_file = None
     possible_paths = [
         "secret_key.txt",
@@ -124,9 +122,7 @@ def scan_blocks(chain, contract_info="contract_info.json"):
             dest_contract_abi = dest_contracts_data["abi"]
             dest_contract = dest_w3.eth.contract(address=dest_contract_address, abi=dest_contract_abi)
             
-            # For each Deposit event, call wrap() on destination contract
-            # Send all transactions first to ensure they're in sequential blocks
-            signed_txns = []
+           
             for evt in events:
                 token = evt['args']['token']
                 recipient = evt['args']['recipient']
@@ -145,31 +141,13 @@ def scan_blocks(chain, contract_info="contract_info.json"):
                 
                 signed_txn = dest_w3.eth.account.sign_transaction(transaction, account.key)
                 tx_hash = dest_w3.eth.send_raw_transaction(signed_txn.raw_transaction)
-                signed_txns.append((tx_hash, amount, recipient))
-            
-            # Wait for all transactions to be confirmed
-            last_block = None
-            for tx_hash, amount, recipient in signed_txns:
+                
+                # Wait for transaction receipt (75% version approach - one by one)
                 receipt = dest_w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
                 if receipt['status'] == 1:
                     print(f"Wrapped {amount} tokens to {recipient} on destination chain. Tx: {tx_hash.hex()}")
-                    last_block = receipt.blockNumber
                 else:
                     print(f"Failed to wrap {amount} tokens. Tx: {tx_hash.hex()}")
-            
-            if last_block is not None:
-                current_block = dest_w3.eth.get_block_number()
-                # Wait until at least 5 blocks have been mined after our last transaction
-                # This ensures when grader scans (end_block - 10) to end_block, our transactions are included
-                target_block = last_block + 5
-                max_wait = 20  # Maximum 20 seconds
-                waited = 0
-                while current_block < target_block and waited < max_wait:
-                    time.sleep(1)
-                    waited += 1
-                    current_block = dest_w3.eth.get_block_number()
-                # Additional short delay to ensure blocks are indexed
-                time.sleep(2)
     
     elif chain == 'destination':
         # Look for Unwrap events on destination chain
