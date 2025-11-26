@@ -92,23 +92,36 @@ def scan_blocks(chain, contract_info="contract_info.json"):
         # Scan the last 5 blocks on source chain
         end_block = w3.eth.get_block_number()
         start_block = max(1, end_block - 5)
+        
+        print(f"Scanning source blocks {start_block} - {end_block}")
+        
         # Look for Deposit events on source chain
         arg_filter = {}
         all_events = []
         try:
             if end_block - start_block < 30:
-                event_filter = contract.events.Deposit.create_filter(from_block=start_block, to_block=end_block, argument_filters=arg_filter)
+                event_filter = contract.events.Deposit.create_filter(
+                    fromBlock=start_block, 
+                    toBlock=end_block, 
+                    argument_filters=arg_filter
+                )
                 events = event_filter.get_all_entries()
                 all_events.extend(events)
             else:
                 for block_num in range(start_block, end_block + 1):
-                    event_filter = contract.events.Deposit.create_filter(from_block=block_num, to_block=block_num, argument_filters=arg_filter)
+                    event_filter = contract.events.Deposit.create_filter(
+                        fromBlock=block_num, 
+                        toBlock=block_num, 
+                        argument_filters=arg_filter
+                    )
                     events = event_filter.get_all_entries()
                     all_events.extend(events)
         except Exception as e:
+            print(f"Error scanning for Deposit events: {e}")
             all_events = []
         
         events = all_events
+        print(f"Found {len(events)} Deposit events")
         
         if len(events) > 0:
             # Get destination contract info
@@ -124,24 +137,26 @@ def scan_blocks(chain, contract_info="contract_info.json"):
             
             # For each Deposit event, call wrap() on destination contract
             for evt in events:
-                token = evt.args['token']
-                recipient = evt.args['recipient']
-                amount = evt.args['amount']
+                token = evt['args']['token']
+                recipient = evt['args']['recipient']
+                amount = evt['args']['amount']
+                
+                print(f"Processing Deposit: token={token}, recipient={recipient}, amount={amount}")
                 
                 # Build and send wrap transaction
                 nonce = dest_w3.eth.get_transaction_count(account.address, 'pending')
                 transaction = dest_contract.functions.wrap(token, recipient, amount).build_transaction({
                     'from': account.address,
                     'nonce': nonce,
-                    'gas': 200000,
+                    'gas': 300000,
                     'gasPrice': dest_w3.eth.gas_price,
                 })
                 
                 signed_txn = dest_w3.eth.account.sign_transaction(transaction, account.key)
                 tx_hash = dest_w3.eth.send_raw_transaction(signed_txn.raw_transaction)
-                receipt = dest_w3.eth.wait_for_transaction_receipt(tx_hash)
+                receipt = dest_w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
                 
-                if receipt.status == 1:
+                if receipt['status'] == 1:
                     print(f"Wrapped {amount} tokens to {recipient} on destination chain. Tx: {tx_hash.hex()}")
                 else:
                     print(f"Failed to wrap {amount} tokens. Tx: {tx_hash.hex()}")
@@ -152,22 +167,34 @@ def scan_blocks(chain, contract_info="contract_info.json"):
         end_block = w3.eth.get_block_number()
         start_block = max(1, end_block - 5)
         
+        print(f"Scanning destination blocks {start_block} - {end_block}")
+        
         arg_filter = {}
         all_events = []
         try:
             if end_block - start_block < 30:
-                event_filter = contract.events.Unwrap.create_filter(from_block=start_block, to_block=end_block, argument_filters=arg_filter)
+                event_filter = contract.events.Unwrap.create_filter(
+                    fromBlock=start_block, 
+                    toBlock=end_block, 
+                    argument_filters=arg_filter
+                )
                 events = event_filter.get_all_entries()
                 all_events.extend(events)
             else:
                 for block_num in range(start_block, end_block + 1):
-                    event_filter = contract.events.Unwrap.create_filter(from_block=block_num, to_block=block_num, argument_filters=arg_filter)
+                    event_filter = contract.events.Unwrap.create_filter(
+                        fromBlock=block_num, 
+                        toBlock=block_num, 
+                        argument_filters=arg_filter
+                    )
                     events = event_filter.get_all_entries()
                     all_events.extend(events)
         except Exception as e:
+            print(f"Error scanning for Unwrap events: {e}")
             all_events = []
         
         events = all_events
+        print(f"Found {len(events)} Unwrap events")
         
         if len(events) > 0:
             # Get source contract info
@@ -183,24 +210,28 @@ def scan_blocks(chain, contract_info="contract_info.json"):
             
             # For each Unwrap event, call withdraw() on source contract
             for evt in events:
-                token = evt.args['underlying_token']
-                recipient = evt.args['to']
-                amount = evt.args['amount']
+                underlying_token = evt['args']['underlying_token']
+                to = evt['args']['to']
+                amount = evt['args']['amount']
+                
+                print(f"Processing Unwrap: token={underlying_token}, to={to}, amount={amount}")
                 
                 # Build and send withdraw transaction
                 nonce = source_w3.eth.get_transaction_count(account.address, 'pending')
-                transaction = source_contract.functions.withdraw(token, recipient, amount).build_transaction({
+                transaction = source_contract.functions.withdraw(underlying_token, to, amount).build_transaction({
                     'from': account.address,
                     'nonce': nonce,
-                    'gas': 200000,
+                    'gas': 300000,
                     'gasPrice': source_w3.eth.gas_price,
                 })
                 
                 signed_txn = source_w3.eth.account.sign_transaction(transaction, account.key)
                 tx_hash = source_w3.eth.send_raw_transaction(signed_txn.raw_transaction)
-                receipt = source_w3.eth.wait_for_transaction_receipt(tx_hash)
+                receipt = source_w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
                 
-                if receipt.status == 1:
-                    print(f"Withdrew {amount} tokens to {recipient} on source chain. Tx: {tx_hash.hex()}")
+                if receipt['status'] == 1:
+                    print(f"Withdrew {amount} tokens to {to} on source chain. Tx: {tx_hash.hex()}")
                 else:
                     print(f"Failed to withdraw {amount} tokens. Tx: {tx_hash.hex()}")
+    
+    return 1
