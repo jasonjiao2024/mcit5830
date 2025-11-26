@@ -88,12 +88,10 @@ def scan_blocks(chain, contract_info="contract_info.json"):
     contract_abi = contracts_data["abi"]
     contract = w3.eth.contract(address=contract_address, abi=contract_abi)
     
-    # Scan the last 5 blocks
-    # Get fresh block number right before scanning to ensure we catch recent events
-    end_block = w3.eth.get_block_number()
-    start_block = max(1, end_block - 5)
-    
     if chain == 'source':
+        # Scan the last 5 blocks on source chain
+        end_block = w3.eth.get_block_number()
+        start_block = max(1, end_block - 5)
         # Look for Deposit events on source chain
         arg_filter = {}
         all_events = []
@@ -150,6 +148,10 @@ def scan_blocks(chain, contract_info="contract_info.json"):
     
     elif chain == 'destination':
         # Look for Unwrap events on destination chain
+        # Get fresh block number from destination chain right before scanning
+        end_block = w3.eth.get_block_number()
+        start_block = max(1, end_block - 5)
+        
         arg_filter = {}
         all_events = []
         try:
