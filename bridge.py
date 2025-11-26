@@ -7,6 +7,7 @@ from datetime import datetime
 import pandas as pd
 import eth_account
 import os
+import time
 
 
 def connect_to(chain):
@@ -124,6 +125,8 @@ def scan_blocks(chain, contract_info="contract_info.json"):
             dest_contract = dest_w3.eth.contract(address=dest_contract_address, abi=dest_contract_abi)
             
             # For each Deposit event, call wrap() on destination contract
+            # Send all transactions first to ensure they're in sequential blocks
+            signed_txns = []
             for evt in events:
                 token = evt['args']['token']
                 recipient = evt['args']['recipient']
@@ -142,8 +145,11 @@ def scan_blocks(chain, contract_info="contract_info.json"):
                 
                 signed_txn = dest_w3.eth.account.sign_transaction(transaction, account.key)
                 tx_hash = dest_w3.eth.send_raw_transaction(signed_txn.raw_transaction)
+                signed_txns.append((tx_hash, amount, recipient))
+            
+            # Wait for all transactions to be confirmed
+            for tx_hash, amount, recipient in signed_txns:
                 receipt = dest_w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
-                
                 if receipt['status'] == 1:
                     print(f"Wrapped {amount} tokens to {recipient} on destination chain. Tx: {tx_hash.hex()}")
                 else:
